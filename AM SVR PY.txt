@@ -1,0 +1,39 @@
+import numpy as np
+import pandas as pd
+from sklearn.svm import SVR
+from sklearn.model_selection import GridSearchCV
+
+# Load the data from "am_lg.txt" into a DataFrame
+data_am_lg = pd.read_csv("am_lg.txt", delim_whitespace=True, header=None)
+data_am_lg.columns = ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", 
+                      "s9", "s10", "s11", "s12", "s13", "s14", "s15", 
+                      "s16", "s17", "am"]
+
+# Separate the DataFrame into input features (X) and the target variable (y)
+X = data_am_lg.iloc[:, :-1]  # All columns except the last one (input features)
+y = data_am_lg.iloc[:, -1]   # The last column (target variable)
+
+# Perform SVR regression with default parameters
+svr = SVR(kernel='rbf')
+svr.fit(X, y)
+print("Initial SVR fit:", svr.score(X, y))
+
+# Perform GridSearchCV to find the best hyperparameters for SVR
+param_grid = {
+    'C': np.arange(1, 101, 1),
+    'epsilon': np.arange(0.0001, 0.0011, 0.0001),
+    'gamma': np.arange(0.001, 0.011, 0.001)
+}
+
+grid_search = GridSearchCV(svr, param_grid, cv=18, scoring='neg_mean_squared_error')
+grid_search.fit(X, y)
+print("Best parameters:", grid_search.best_params_)
+
+# Use the best parameters to fit the model
+best_svr = grid_search.best_estimator_
+best_svr.fit(X, y)
+print("Optimized SVR fit:", best_svr.score(X, y))
+
+# Make predictions using the optimized model
+predictions = best_svr.predict(X)
+print("Predictions:", predictions)
